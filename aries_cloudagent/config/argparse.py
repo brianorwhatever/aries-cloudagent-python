@@ -857,6 +857,13 @@ class TransportGroup(ArgumentGroup):
             (self-attested) to other agents as part of forming a connection.",
         )
         parser.add_argument(
+            "--image-url",
+            type=str,
+            env_var="ACAPY_IMAGE_URL",
+            help="Specifies the image url for this agent. This image url is publicized\
+            (self-attested) to other agents as part of forming a connection.",
+        )
+        parser.add_argument(
             "--max-message-size",
             default=2097152,
             type=ByteSize(min_size=1024),
@@ -897,6 +904,8 @@ class TransportGroup(ArgumentGroup):
 
         if args.label:
             settings["default_label"] = args.label
+        if args.image_url:
+            settings["image_url"] = args.image_url
         if args.max_message_size:
             settings["transport.max_message_size"] = args.max_message_size
         if args.max_outbound_retry:
@@ -921,19 +930,6 @@ class MediationGroup(ArgumentGroup):
                 forward messages on behalf of the recipient. See aries-rfc:0211.",
         )
         parser.add_argument(
-            "--automate-mediation",
-            action="store_true",
-            env_var="ACAPY_AUTO_MEDIATION",
-            help="automate all steps of mediation. Default: false.",
-        )
-        parser.add_argument(
-            "--auto-respond-keylist-update-response",
-            action="store_true",
-            env_var="ACAPY_AUTO_RESPOND_KEYLIST_UPDATE_RESPONSE",
-            help="Automatically create a connection invitation with the received updated"
-            " keylists. Default: false.",
-        )
-        parser.add_argument(
             "--auto-send-keylist-update-in-requests",
             action="store_true",
             env_var="ACAPY_AUTO_SEND_KEYLIST_UPDATE_IN_REQUESTS",
@@ -947,28 +943,49 @@ class MediationGroup(ArgumentGroup):
             help="Automatically updated mediator with newly created keys."
             " keylists. Default: false.",
         )
-        # TODO: add flags for terms and queue
+        parser.add_argument(
+            "--mediator-invitation",
+            type=str,
+            metavar="<invite URL to mediator>",
+            env_var="ACAPY_MEDIATION_INVITATION",
+            help="Connect to mediator through provided connection invitation\
+            and send mediation request and set as default mediator.",
+        )
+        parser.add_argument(
+            "--default-mediator-id",
+            type=str,
+            metavar="<mediation id>",
+            env_var="ACAPY_DEFAULT_MEDIATION_ID",
+            help="Set the default mediator by ID",
+        )
+        parser.add_argument(
+            "--clear-default-mediator",
+            action="store_true",
+            env_var="ACAPY_CLEAR_DEFAULT_MEDIATOR",
+            help="Clear the stored default mediator.",
+        )
 
     def get_settings(self, args: Namespace):
         """Extract mediation settings."""
         settings = {}
         if args.auto_send_keylist_update_in_requests:
             settings["mediation.auto_send_keylist_update_in_requests"] = True
-        else:
-            settings["mediation.auto_send_keylist_update_in_requests"] = False
         if args.auto_send_keylist_update_in_create_invitation:
             settings["mediation.auto_send_keylist_update_in_create_invitation"] = True
-        else:
-            settings["mediation.auto_send_keylist_update_in_create_invitation"] = False
         if args.open_mediation:
             settings["mediation.open"] = True
-            if args.automate_mediation:
-                settings["mediation.automate_mediation"] = True
-                settings["mediation.auto_respond_keylist_update_response"] = True
-                settings["mediation.auto_send_keylist_update_in_requests"] = True
-                settings[
-                    "mediation.auto_send_keylist_update_in_create_invitation"
-                ] = True
+        if args.mediator_invitation:
+            settings["mediation.invite"] = args.mediator_invitation
+        if args.default_mediator_id:
+            settings["mediation.default_id"] = args.default_mediator_id
+        if args.clear_default_mediator:
+            settings["mediation.clear"] = True
+
+        if args.clear_default_mediator and args.default_mediator_id:
+            raise ArgsParseError(
+                "Cannot both set and clear mediation at the same time."
+            )
+
         return settings
 
 

@@ -66,6 +66,16 @@ class WalletRecord(BaseRecord):
         return self.settings.get("wallet.type")
 
     @property
+    def wallet_webhook_urls(self) -> str:
+        """Accessor for webhook_urls of the wallet."""
+        return self.settings.get("wallet.webhook_urls")
+
+    @property
+    def wallet_dispatch_type(self) -> str:
+        """Accessor for webhook dispatch type of the wallet."""
+        return self.settings.get("wallet.dispatch_type")
+
+    @property
     def wallet_key(self) -> Optional[str]:
         """Accessor for the key of the wallet."""
         return self.settings.get("wallet.key")
@@ -85,10 +95,9 @@ class WalletRecord(BaseRecord):
     @property
     def requires_external_key(self) -> bool:
         """Accessor to check if the wallet requires an external key."""
-        wallet_type = self.settings.get("wallet.type")
 
         # Key not required for in_memory wallets
-        if wallet_type == "in_memory":
+        if self.wallet_type == "in_memory":
             return False
         # Managed wallets have the key stored in the wallet
         elif self.is_managed:
